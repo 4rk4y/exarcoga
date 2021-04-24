@@ -14,6 +14,7 @@ use std::{
 };
 
 use super::algorithms::random_outline::room_outline;
+use super::algorithms::rectangular_area::rectangular_area;
 use super::constants::*;
 
 pub struct Ground;
@@ -56,22 +57,22 @@ pub fn setup(
     let tiles = &mini_map.layers[0].data;
 
     let mut paths = HashMap::new();
-    paths.insert(1, "0.png");
-    paths.insert(2, "1.png");
-    paths.insert(3, "2.png");
-    paths.insert(4, "3.png");
-    paths.insert(5, "4.png");
-    paths.insert(6, "5.png");
-    paths.insert(17, "16.png");
-    paths.insert(18, "17.png");
-    paths.insert(19, "18.png");
-    paths.insert(20, "19.png");
-    paths.insert(21, "20.png");
-    paths.insert(33, "32.png");
-    paths.insert(34, "33.png");
-    paths.insert(35, "34.png");
-    paths.insert(36, "35.png");
-    paths.insert(37, "36.png");
+    paths.insert(0, "0.png");
+    paths.insert(1, "1.png");
+    paths.insert(2, "2.png");
+    paths.insert(3, "3.png");
+    paths.insert(4, "4.png");
+    paths.insert(5, "5.png");
+    paths.insert(16, "16.png");
+    paths.insert(17, "17.png");
+    paths.insert(18, "18.png");
+    paths.insert(19, "19.png");
+    paths.insert(20, "20.png");
+    paths.insert(32, "32.png");
+    paths.insert(33, "33.png");
+    paths.insert(34, "34.png");
+    paths.insert(35, "35.png");
+    paths.insert(36, "36.png");
 
     // for (i, value) in tiles.iter().enumerate() {
     //     if value != &18 && value != &37 {
@@ -105,21 +106,36 @@ pub fn setup(
     // }
 
     // let room = room_outline(7, 9.0, 15.0);
-    let room = room_outline(12, 9.0, 15.0);
+    // let room = room_outline(12, 9.0, 15.0);
+    let room = rectangular_area(20, 30);
     println!("{:?}", room);
     for (x, y, value) in room.iter() {
-        commands
-            .spawn_bundle(SpriteBundle {
-                material: materials.add(asset_server.load(paths[value]).into()),
-                sprite: Sprite::new(Vec2::new(SIZE_32, SIZE_32)),
-                ..Default::default()
-            })
-            .insert(
-                RigidBodyBuilder::new_static()
-                    .translation(*x as f32 * SIZE_32, *y as f32 * SIZE_32),
-            )
-            .insert(ColliderBuilder::cuboid(SIZE_32_PHYSICS, SIZE_32_PHYSICS).friction(0.0))
-            .insert(Ground);
+        if value == &17 {
+            commands
+                .spawn_bundle(SpriteBundle {
+                    material: materials.add(asset_server.load(paths[value]).into()),
+                    sprite: Sprite::new(Vec2::new(SIZE_32, SIZE_32)),
+                    ..Default::default()
+                })
+                .insert(
+                    RigidBodyBuilder::new_static()
+                        .translation(*x as f32 * SIZE_32, *y as f32 * SIZE_32),
+                )
+                .insert(Ground);
+        } else {
+            commands
+                .spawn_bundle(SpriteBundle {
+                    material: materials.add(asset_server.load(paths[value]).into()),
+                    sprite: Sprite::new(Vec2::new(SIZE_32, SIZE_32)),
+                    ..Default::default()
+                })
+                .insert(
+                    RigidBodyBuilder::new_static()
+                        .translation(*x as f32 * SIZE_32, *y as f32 * SIZE_32),
+                )
+                .insert(ColliderBuilder::cuboid(SIZE_32_PHYSICS, SIZE_32_PHYSICS).friction(0.0))
+                .insert(Ground);
+        }
     }
 
     // let ground_blocks = 16;

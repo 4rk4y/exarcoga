@@ -12,6 +12,7 @@ mod level;
 mod player;
 mod algorithms {
     pub mod random_outline;
+    pub mod rectangular_area;
 }
 
 fn main() {
