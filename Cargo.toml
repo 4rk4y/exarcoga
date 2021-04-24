@@ -1,0 +1,16 @@
+[package]
+authors = ["lukyw"]
+edition = "2018"
+name = "exarcoga"
+version = "0.1.0"
+
+[dependencies]
+bevy = "0.5"
+bevy_rapier2d = "0.9"
+rand = "0.8.3"
+rapier2d = "0.7.2"
+serde = "1.0.19"
+serde_json = "1.0"
+
+[profile.dev]
+opt-level = 3
