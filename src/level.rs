@@ -15,12 +15,16 @@ use std::{
 
 use super::algorithms::random_outline::room_outline;
 use super::algorithms::rectangular_area::rectangular_area;
-use super::constants::*;
+use super::{constants::*, GameState};
 
 pub struct Ground;
 
 pub struct SaveGame {
     pub pending: bool,
+}
+
+pub struct NextRoomData {
+    pub room_number: u8,
 }
 
 #[derive(Deserialize)]
@@ -41,6 +45,7 @@ pub fn setup(
     mut rapier_config: ResMut<RapierConfiguration>,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    mut game_state: ResMut<State<GameState>>,
 ) {
     rapier_config.gravity = Vector2::zeros();
     // let mut file = File::open("./assets/map.json").expect("File open failed.");
@@ -48,13 +53,13 @@ pub fn setup(
     // file.read_to_string(&mut buffer).expect("File read failed.");
     // println!("{}", buffer);
 
-    let file = File::open("./assets/room_1.json").expect("File open failed.");
-    let reader = BufReader::new(file);
+    // let file = File::open("./assets/room_1.json").expect("File open failed.");
+    // let reader = BufReader::new(file);
 
-    let mini_map: Map = serde_json::from_reader(reader).expect("JSON deserialization failed.");
-    let map_width = mini_map.width;
-    let map_height = mini_map.height;
-    let tiles = &mini_map.layers[0].data;
+    // let mini_map: Map = serde_json::from_reader(reader).expect("JSON deserialization failed.");
+    // let map_width = mini_map.width;
+    // let map_height = mini_map.height;
+    // let tiles = &mini_map.layers[0].data;
 
     let mut paths = HashMap::new();
     paths.insert(0, "0.png");
@@ -108,12 +113,14 @@ pub fn setup(
     // let room = room_outline(7, 9.0, 15.0);
     // let room = room_outline(12, 9.0, 15.0);
     let room = rectangular_area(20, 30);
-    println!("{:?}", room);
+
+    // println!("{:?}", room);
     for (x, y, value) in room.iter() {
         if value == &17 {
             commands
                 .spawn_bundle(SpriteBundle {
                     material: materials.add(asset_server.load(paths[value]).into()),
+                    // material: materials.add(Color::rgb(0.5, 0.5, 0.5).into()),
                     sprite: Sprite::new(Vec2::new(SIZE_32, SIZE_32)),
                     ..Default::default()
                 })
@@ -121,11 +128,13 @@ pub fn setup(
                     RigidBodyBuilder::new_static()
                         .translation(*x as f32 * SIZE_32, *y as f32 * SIZE_32),
                 )
-                .insert(Ground);
+                .insert(Ground)
+                .id();
         } else {
             commands
                 .spawn_bundle(SpriteBundle {
                     material: materials.add(asset_server.load(paths[value]).into()),
+                    // material: materials.add(Color::rgb(0.2, 0.2, 0.2).into()),
                     sprite: Sprite::new(Vec2::new(SIZE_32, SIZE_32)),
                     ..Default::default()
                 })
@@ -134,7 +143,8 @@ pub fn setup(
                         .translation(*x as f32 * SIZE_32, *y as f32 * SIZE_32),
                 )
                 .insert(ColliderBuilder::cuboid(SIZE_32_PHYSICS, SIZE_32_PHYSICS).friction(0.0))
-                .insert(Ground);
+                .insert(Ground)
+                .id();
         }
     }
 
@@ -236,3 +246,14 @@ pub fn setup(
 //         save_game.pending = false;
 //     }
 // }
+
+pub fn despawn(
+    mut commands: Commands,
+    query: Query<Entity, With<Ground>>,
+    mut game_state: ResMut<State<GameState>>,
+) {
+    for entity in query.iter() {
+        commands.entity(entity).despawn();
+    }
+    game_state.set(GameState::Active).unwrap();
+}

@@ -1,4 +1,8 @@
-use super::{constants::*, level::SaveGame};
+use super::{
+    constants::*,
+    level::{NextRoomData, SaveGame},
+    GameState,
+};
 use bevy::prelude::*;
 use bevy_rapier2d::{
     na::{Isometry2, Translation2, Vector2},
@@ -38,12 +42,19 @@ pub fn movement(
     time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
     mut save_game: ResMut<SaveGame>,
+    mut next_room: ResMut<NextRoomData>,
     mut player_data: ResMut<PlayerData>,
     mut rigid_bodies: ResMut<RigidBodySet>,
+    mut game_state: ResMut<State<GameState>>,
     mut query: Query<&RigidBodyHandleComponent, With<Player>>,
 ) {
     if keyboard_input.just_pressed(KeyCode::S) {
         save_game.pending = true;
+    }
+
+    if keyboard_input.just_pressed(KeyCode::N) {
+        next_room.room_number = 0;
+        game_state.set(GameState::LoadRoom).unwrap();
     }
 
     for rigid_body_component in query.iter_mut() {
