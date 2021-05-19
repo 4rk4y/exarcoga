@@ -2,16 +2,26 @@ use bevy::{prelude::*, reflect::TypeRegistry};
 use bevy_rapier2d::{
     na::Vector2, physics::RapierConfiguration, rapier::dynamics::RigidBodyBuilder,
 };
+use indradb::{
+    Datastore, SledDatastore, SledTransaction, SpecificVertexQuery, Transaction, Type, Vertex,
+    VertexQueryExt,
+};
 use rand::prelude::*;
 use rapier2d::geometry::ColliderBuilder;
 use serde::Deserialize;
 use serde_json::Value;
-use std::f32::consts::PI;
+use sled::open;
+use std::{
+    collections::hash_map::DefaultHasher,
+    f32::consts::PI,
+    hash::{Hash, Hasher},
+};
 use std::{
     collections::HashMap,
     fs::File,
     io::{BufReader, Read},
 };
+use uuid::Uuid;
 
 use super::algorithms::random_outline::room_outline;
 use super::algorithms::rectangular_area::rectangular_area;
@@ -236,3 +246,99 @@ pub fn setup(
 //         save_game.pending = false;
 //     }
 // }
+
+#[test]
+fn load_store() {
+    let store = sled::open("test").expect("open failed");
+    store.insert("key", vec![0, 1, 2, 255]);
+    assert_eq!(
+        store.get(&"key"),
+        Ok(Some(sled::IVec::from(vec![0, 1, 2, 255])))
+    );
+    // store.flush();
+}
+
+#[test]
+fn test2() {
+    let graph_store = SledDatastore::new("graph-store");
+
+    if let Ok(graph_store) = graph_store {
+        let transaction = graph_store.transaction();
+
+        if let Ok(transaction) = transaction {
+            let vertex_type = Type::new("test");
+            if let Ok(vertex_type) = vertex_type {
+                let mut hasher = DefaultHasher::new();
+                12.hash(&mut hasher);
+                let hash = hasher.finish();
+                let hash_string = hash.to_string();
+                let chars = hash_string.chars();
+                let chars_u8 = chars.map(|c| c as u8).collect::<Vec<u8>>();
+                println!("{:?}", chars_u8);
+
+                let test = vec![1, 2, 2, 3];
+                let uuid = uuid::Uuid::new_v3(&uuid::Uuid::NAMESPACE_DNS, &chars_u8);
+
+                println!("{}", uuid);
+
+                let vertex = Vertex::with_id(uuid, vertex_type);
+                transaction.create_vertex(&vertex);
+                let vertex_count = transaction.get_vertex_count();
+                println!("count {:?}", vertex_count);
+            }
+        }
+    }
+}
+
+#[test]
+fn get_node() {
+    let graph_store = SledDatastore::new("graph-store").unwrap();
+    let transaction = graph_store.transaction().unwrap();
+
+    let uuid = uuid::Uuid::parse_str("df594c38-b05f-3442-938a-dd72741acc68").unwrap();
+    let vertex = transaction.get_vertices(SpecificVertexQuery::single(uuid));
+
+    println!("vertex {:?}", vertex);
+}
+
+#[test]
+fn set_node_property() {
+    let graph_store = SledDatastore::new("graph-store").unwrap();
+    let transaction = graph_store.transaction().unwrap();
+
+    let uuid = uuid::Uuid::parse_str("df594c38-b05f-3442-938a-dd72741acc68").unwrap();
+    transaction
+        .set_vertex_properties(
+            SpecificVertexQuery::single(uuid).property("property"),
+            &Value::String("test".to_string()),
+        )
+        .unwrap();
+
+    // println!("vertex {:?}", vertex);
+}
+
+#[test]
+fn get_node_property() {
+    let graph_store = SledDatastore::new("graph-store").unwrap();
+    let transaction = graph_store.transaction().unwrap();
+
+    let uuid = uuid::Uuid::parse_str("df594c38-b05f-3442-938a-dd72741acc68").unwrap();
+    let vertex = transaction
+        .get_vertex_properties(SpecificVertexQuery::single(uuid).property("property"))
+        .unwrap();
+
+    println!("vertex {:?}", vertex);
+}
+
+#[test]
+fn get_all_node_property() {
+    let graph_store = SledDatastore::new("graph-store").unwrap();
+    let transaction = graph_store.transaction().unwrap();
+
+    let uuid = uuid::Uuid::parse_str("df594c38-b05f-3442-938a-dd72741acc68").unwrap();
+    let vertex = transaction
+        .get_all_vertex_properties(SpecificVertexQuery::single(uuid))
+        .unwrap();
+
+    println!("vertex {:?}", vertex);
+}

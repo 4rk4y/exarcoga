@@ -3,3 +3,5 @@
 /.cargo
 /.vscode
 /target
+/test
+/graph-store
